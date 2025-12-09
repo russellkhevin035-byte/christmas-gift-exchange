@@ -57,14 +57,6 @@ input, textarea {
     font-size: 16px;
 }
 
-.top-image {
-    width: 35%;
-    max-width: 35px;
-    height: 30px;
-    object-fit: cover;
-    border-radius: 10px;
-    margin-bottom: 20px;
-}
 
 .user-info {
     margin-bottom: 20px;
@@ -140,6 +132,7 @@ textarea {
         width: 100%;
     }
 }
+
 
 
 
