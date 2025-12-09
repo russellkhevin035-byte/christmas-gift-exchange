@@ -1,45 +1,93 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login to Exchange Gift For Christmas</title>
+    <title>Your Gift Exchange Dashboard</title>
     <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div class="container">
-        <h1>🎄 Login to Exchange Gift For Christmas 🎄</h1>
-        <p>Enter your Gmail to log in.</p>
-        <form id="loginForm">
-            <label for="email">Gmail:</label>
-            <input type="email" id="email" required>
-            
-            <button type="submit">LREGISTER</button>
-        </form>
-        <p>Already have an account? <a href="index.html">SIGN IN</a></p>
+
+.top-image {
+    width: 35%;
+    max-width: 35px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 20px;
+
+
+     <div class="history-section">
+            <button id="historyBtn">Tap to See History of All Users</button>
+            <div id="historyList" class="hidden">
+                <h3>All Users' Names & Wishlists</h3>
+                <div id="userGrid"></div>
+            </div>
+        </div>
     </div>
     <script type="module">
-        import { loginUser } from './firebase.js';
+        import { saveWishlist, loadHistory, loadUserWishlist } from './firebase.js';
         
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('email').value;
-            
-            const result = await loginUser(email);
-            if (result.success) {
-                alert(result.message);
-                window.location.href = 'page2.html';
+        // Load current user
+        let currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        if (!currentUser) {
+            alert('No user data found. Please register first.');
+            window.location.href = 'index.html';
+        }
+        
+        document.getElementById('userName').textContent = currentUser.name;
+        
+        // Load user's wishlist on page load
+        (async () => {
+            const wishlist = await loadUserWishlist();
+            document.getElementById('wishlist').value = wishlist;
+        })();
+        
+        // Check if history was visible and load it
+        const historyVisible = localStorage.getItem('historyVisible') === 'true';
+        const historyList = document.getElementById('historyList');
+        if (historyVisible) {
+            historyList.classList.remove('hidden');
+            loadHistory(displayHistory);
+        }
+        
+        // Submit wishlist
+        document.getElementById('submitWishlist').addEventListener('click', async function() {
+            const wishlistText = document.getElementById('wishlist').value;
+            const result = await saveWishlist(wishlistText);
+            alert(result.message);
+        });
+        
+        // History button
+        document.getElementById('historyBtn').addEventListener('click', function() {
+            const isHidden = historyList.classList.contains('hidden');
+            if (isHidden) {
+                historyList.classList.remove('hidden');
+                loadHistory(displayHistory);
+                localStorage.setItem('historyVisible', 'true');
             } else {
-                alert(result.message);
-                if (result.message.includes('not found')) {
-                    window.location.href = 'index.html';
-                }
+                historyList.classList.add('hidden');
+                localStorage.setItem('historyVisible', 'false');
             }
         });
+        
+        function displayHistory(users) {
+            const userGrid = document.getElementById('userGrid');
+            userGrid.innerHTML = '';
+            if (users.length === 0) {
+                userGrid.innerHTML = '<p>No users yet.</p>';
+            } else {
+                users.forEach(user => {
+                    const userCard = document.createElement('div');
+                    userCard.className = 'user-card';
+                    userCard.innerHTML = `
+                        <img src="catherine.jpg" alt="${user.name}" class="card-image">
+                        <h4>${user.name}</h4>
+                        <p><strong>Wishlist:</strong> ${user.wishlist || 'None yet'}</p>
+                    `;
+                    userGrid.appendChild(userCard);
+                });
+            }
+        }
     </script>
 </body>
 </html>
-
-
-
