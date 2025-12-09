@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exchange Gift For Christmas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎄 Exchange Gift For Christmas 🎄</h1>
+        <p>Welcome! Enter your details to join the gift exchange.</p>
+        <form id="userForm">
+            <label for="fullName">Full Name:</label>
+            <input type="text" id="fullName" required>
+            
+            <label for="email">Gmail:</label>
+            <input type="email" id="email" required>
+            
+            <button type="submit">Go!</button>
+        </form>
+    </div>
+    <script>
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            
+            // Get existing users from localStorage
+            let users = JSON.parse(localStorage.getItem('christmasUsers')) || [];
+            
+            // Check if user already exists (by email)
+            const existingUser = users.find(u => u.email === email);
+            if (existingUser) {
+                alert('You are already registered! Redirecting...');
+                localStorage.setItem('currentUser', JSON.stringify(existingUser));
+            } else {
+                const newUser = { name, email, wishlist: '' };
+                users.push(newUser);
+                localStorage.setItem('christmasUsers', JSON.stringify(users));
+                localStorage.setItem('currentUser', JSON.stringify(newUser));
+            }
+            
+            // Redirect to second page
+            window.location.href = 'page2.html';
+        });
+    </script>
+</body>
+</html>
