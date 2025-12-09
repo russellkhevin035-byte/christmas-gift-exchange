@@ -25,59 +25,77 @@
             </div>
         </div>
     </div>
-    <script>
+    <script type="module">
+        import { saveWishlist, loadHistory, loadUserWishlist } from './firebase.js';
+        
+        console.log("Page2 script loaded.");
+        
         // Load current user
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        let currentUser = JSON.parse(localStorage.getItem('currentUser'));
         if (!currentUser) {
             alert('No user data found. Please register first.');
             window.location.href = 'index.html';
+        } else {
+            console.log("Current user loaded:", currentUser.name);
         }
         
         document.getElementById('userName').textContent = currentUser.name;
-        document.getElementById('wishlist').value = currentUser.wishlist;
         
-        // Submit wishlist on button click
-        document.getElementById('submitWishlist').addEventListener('click', function() {
-            const wishlistText = document.getElementById('wishlist').value;
-            currentUser.wishlist = wishlistText;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            
-            // Update in users array
-            let users = JSON.parse(localStorage.getItem('christmasUsers')) || [];
-            const index = users.findIndex(u => u.email === currentUser.email);
-            if (index !== -1) {
-                users[index] = currentUser;
-                localStorage.setItem('christmasUsers', JSON.stringify(users));
-            }
-            
-            alert('Wishlist saved!');
-        });
-        
-        // History tap/click (no hover)
-        const historyBtn = document.getElementById('historyBtn');
+        // Check history visibility
+        const historyVisible = localStorage.getItem('historyVisible') === 'true';
         const historyList = document.getElementById('historyList');
-        const userGrid = document.getElementById('userGrid');
-        
-        function toggleHistory() {
-            if (historyList.classList.contains('hidden')) {
-                const users = JSON.parse(localStorage.getItem('christmasUsers')) || [];
-                userGrid.innerHTML = '';
-                users.forEach(user => {
-                    const userCard = document.createElement('div');
-                    userCard.className = 'user-card';
-                    userCard.innerHTML = `
-                        <h4>${user.name}</h4>
-                        <p><strong>Wishlist:</strong> ${user.wishlist || 'None yet'}</p>
-                    `;
-                    userGrid.appendChild(userCard);
-                });
-                historyList.classList.remove('hidden');
-            } else {
-                historyList.classList.add('hidden');
-            }
+        if (historyVisible) {
+            historyList.classList.remove('hidden');
+            console.log("History was visible, showing it.");
         }
         
-        historyBtn.addEventListener('click', toggleHistory); // Tap/click to show/hide
+        // Load user's wishlist on page load
+        (async () => {
+            console.log("Loading user's wishlist...");
+            const wishlist = await loadUserWishlist();
+            document.getElementById('wishlist').value = wishlist;
+        })();
+        
+        // Submit wishlist button
+        document.getElementById('submitWishlist').addEventListener('click', async function() {
+            console.log("Submit wishlist clicked.");
+            alert("Submitting wishlist...");
+            const wishlistText = document.getElementById('wishlist').value;
+            
+            const result = await saveWishlist(wishlistText);
+            alert(result.message);
+        });
+        
+        // History button
+        const historyBtn = document.getElementById('historyBtn');
+        historyBtn.addEventListener('click', function() {
+            console.log("History button clicked.");
+            alert("Toggling history...");
+            const isHidden = historyList.classList.contains('hidden');
+            if (isHidden) {
+                console.log("Showing history.");
+                historyList.classList.remove('hidden');
+                loadHistory((users) => {
+                    const userGrid = document.getElementById('userGrid');
+                    userGrid.innerHTML = '';
+                    users.forEach(user => {
+                        const userCard = document.createElement('div');
+                        userCard.className = 'user-card';
+                        userCard.innerHTML = `
+                            <h4>${user.name}</h4>
+                            <p><strong>Wishlist:</strong> ${user.wishlist || 'None yet'}</p>
+                        `;
+                        userGrid.appendChild(userCard);
+                    });
+                    alert("History loaded!");
+                });
+                localStorage.setItem('historyVisible', 'true');
+            } else {
+                console.log("Hiding history.");
+                historyList.classList.add('hidden');
+                localStorage.setItem('historyVisible', 'false');
+            }
+        });
     </script>
 </body>
 </html>
