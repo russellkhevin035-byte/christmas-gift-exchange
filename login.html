@@ -1,1 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login to Exchange Gift For Christmas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎄 Login to Exchange Gift For Christmas 🎄</h1>
+        <p>Enter your Gmail to log in.</p>
+        <form id="loginForm">
+            <label for="email">Gmail:</label>
+            <input type="email" id="email" required>
+            
+            <button type="submit">Login</button>
+        </form>
+        <p>Don't have an account? <a href="index.html">Register here</a></p>
+    </div>
+    <script type="module">
+        import { loginUser } from './firebase.js';
+        
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            
+            const result = await loginUser(email);
+            if (result.success) {
+                alert(result.message);
+                window.location.href = 'page2.html';
+            } else {
+                alert(result.message);
+                if (result.message.includes('not found')) {
+                    window.location.href = 'index.html';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+
 
