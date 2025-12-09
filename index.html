@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>exchange Gift For Christmas</title>
+    <title>Exchange Gift For Christmas</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -18,12 +18,19 @@
             <input type="email" id="email" required>
             
             <button type="submit">ENTER</button>
-            </form>
-        <p>Don't have an account? <a href="login.html">Register here</a></p>
+        </form>
+        
+        <div class="history-section">
+            <button id="historyBtn">Tap to see history</button>
+            <div id="historyList" class="hidden">
+                <h3>All Users' Names & Wishlists</h3>
+                <div id="userGrid"></div>
+            </div>
+        </div>
     </div>
       
     <script type="module">
-        import { registerUser } from './firebase.js';
+        import { registerUser, loadHistory } from './firebase.js';
         
         document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -42,10 +49,46 @@
                 }
             }
         });
+        
+        // Check if history was visible and load it
+        const historyVisible = localStorage.getItem('historyVisible') === 'true';
+        const historyList = document.getElementById('historyList');
+        if (historyVisible) {
+            historyList.classList.remove('hidden');
+            loadHistory(displayHistory);
+        }
+        
+        // History button
+        document.getElementById('historyBtn').addEventListener('click', function() {
+            const isHidden = historyList.classList.contains('hidden');
+            if (isHidden) {
+                historyList.classList.remove('hidden');
+                loadHistory(displayHistory);
+                localStorage.setItem('historyVisible', 'true');
+            } else {
+                historyList.classList.add('hidden');
+                localStorage.setItem('historyVisible', 'false');
+            }
+        });
+        
+        function displayHistory(users) {
+            const userGrid = document.getElementById('userGrid');
+            userGrid.innerHTML = '';
+            if (users.length === 0) {
+                userGrid.innerHTML = '<p>No users yet.</p>';
+            } else {
+                users.forEach(user => {
+                    const userCard = document.createElement('div');
+                    userCard.className = 'user-card';
+                    userCard.innerHTML = `
+                        <img src="catherine.jpg" alt="${user.name}" class="card-image">
+                        <h4>${user.name}</h4>
+                        <p><strong>Wishlist:</strong> ${user.wishlist || 'None yet'}</p>
+                    `;
+                    userGrid.appendChild(userCard);
+                });
+            }
+        }
     </script>
 </body>
 </html>
-
-
-
-
