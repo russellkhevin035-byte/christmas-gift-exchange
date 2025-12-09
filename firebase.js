@@ -1,14 +1,14 @@
 // firebase.js - Firebase utilities for the Christmas Gift Exchange app
 
-// Firebase config - Replace with your real config from Firebase Console
+// Your real Firebase config (provided by user)
 const firebaseConfig = {
-  apiKey: "AIzaSyCOxCavlsWWB662RO15X4iDcSZFrtH2uTI",
-  authDomain: "christmasgiftexchange-8d38e.firebaseapp.com",
-  projectId: "christmasgiftexchange-8d38e",
-  storageBucket: "christmasgiftexchange-8d38e.firebasestorage.app",
-  messagingSenderId: "184610390168",
-  appId: "1:184610390168:web:fc87da7d2c88db285790ed",
-  measurementId: "G-XYBRD248ES"
+    apiKey: "AIzaSyCOxCavlsWWB662RO15X4iDcSZFrtH2uTI",
+    authDomain: "christmasgiftexchange-8d38e.firebaseapp.com",
+    projectId: "christmasgiftexchange-8d38e",
+    storageBucket: "christmasgiftexchange-8d38e.firebasestorage.app",
+    messagingSenderId: "184610390168",
+    appId: "1:184610390168:web:fc87da7d2c88db285790ed",
+    measurementId: "G-XYBRD248ES"
 };
 
 let app = null;
@@ -16,7 +16,7 @@ let db = null;
 let isFirebaseAvailable = false;
 
 try {
-    // Import Firebase modules (this assumes the HTML includes the Firebase scripts)
+    // Import Firebase modules
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js");
     const { getFirestore } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js");
     
@@ -26,10 +26,10 @@ try {
     console.log("Firebase initialized successfully.");
 } catch (error) {
     console.error("Firebase initialization failed:", error);
-    alert("Firebase not set up. Using local storage only (no shared data).");
+    alert("Firebase not set up. Using local storage (data not shared across devices).");
 }
 
-// Export functions for use in other files
+// Export functions
 export { db, isFirebaseAvailable };
 
 // Function to register a new user
@@ -45,6 +45,10 @@ export async function registerUser(name, email) {
             }
             await setDoc(docRef, newUser);
             localStorage.setItem('currentUser', JSON.stringify(newUser));
+            // Add to global shared list for fallback
+            let sharedUsers = JSON.parse(localStorage.getItem('sharedChristmasUsers')) || [];
+            sharedUsers.push(newUser);
+            localStorage.setItem('sharedChristmasUsers', JSON.stringify(sharedUsers));
             return { success: true, message: 'Registered successfully!' };
         } else {
             let users = JSON.parse(localStorage.getItem('christmasUsers')) || [];
@@ -55,6 +59,10 @@ export async function registerUser(name, email) {
             users.push(newUser);
             localStorage.setItem('christmasUsers', JSON.stringify(users));
             localStorage.setItem('currentUser', JSON.stringify(newUser));
+            // Simulate shared
+            let sharedUsers = JSON.parse(localStorage.getItem('sharedChristmasUsers')) || [];
+            sharedUsers.push(newUser);
+            localStorage.setItem('sharedChristmasUsers', JSON.stringify(sharedUsers));
             return { success: true, message: 'Registered locally!' };
         }
     } catch (error) {
@@ -102,6 +110,11 @@ export async function saveWishlist(wishlistText) {
         if (isFirebaseAvailable) {
             const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js");
             await setDoc(doc(db, 'users', currentUser.email), currentUser);
+            // Update shared list
+            let sharedUsers = JSON.parse(localStorage.getItem('sharedChristmasUsers')) || [];
+            const index = sharedUsers.findIndex(u => u.email === currentUser.email);
+            if (index !== -1) sharedUsers[index] = currentUser;
+            localStorage.setItem('sharedChristmasUsers', JSON.stringify(sharedUsers));
             return { success: true, message: 'Wishlist saved and synced!' };
         } else {
             let users = JSON.parse(localStorage.getItem('christmasUsers')) || [];
@@ -110,6 +123,11 @@ export async function saveWishlist(wishlistText) {
                 users[index] = currentUser;
                 localStorage.setItem('christmasUsers', JSON.stringify(users));
             }
+            // Update shared list
+            let sharedUsers = JSON.parse(localStorage.getItem('sharedChristmasUsers')) || [];
+            const sharedIndex = sharedUsers.findIndex(u => u.email === currentUser.email);
+            if (sharedIndex !== -1) sharedUsers[sharedIndex] = currentUser;
+            localStorage.setItem('sharedChristmasUsers', JSON.stringify(sharedUsers));
             return { success: true, message: 'Wishlist saved locally!' };
         }
     } catch (error) {
@@ -120,12 +138,15 @@ export async function saveWishlist(wishlistText) {
 
 // Function to load history (all users)
 export async function loadHistory(callback) {
+    console.log("Loading history...");
     if (isFirebaseAvailable) {
         try {
             const { collection, onSnapshot } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js");
+            console.log("Setting up Firebase listener...");
             onSnapshot(collection(db, 'users'), (snapshot) => {
                 const users = [];
                 snapshot.forEach((doc) => users.push(doc.data()));
+                console.log("Firebase users loaded:", users.length);
                 callback(users);
             });
         } catch (error) {
@@ -133,19 +154,22 @@ export async function loadHistory(callback) {
             loadLocalHistory(callback);
         }
     } else {
+        console.log("Firebase not available, loading local history.");
         loadLocalHistory(callback);
     }
 }
 
 function loadLocalHistory(callback) {
-    const users = JSON.parse(localStorage.getItem('christmasUsers')) || [];
+    // Use shared list for "simulated" sharing on same device
+    const users = JSON.parse(localStorage.getItem('sharedChristmasUsers')) || [];
+    console.log("Local/shared users loaded:", users.length);
     callback(users);
 }
 
 // Function to load current user's wishlist on page load
 export async function loadUserWishlist() {
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (!currentUser) return;
+    if (!currentUser) return '';
     
     try {
         if (isFirebaseAvailable) {
@@ -166,5 +190,4 @@ export async function loadUserWishlist() {
         console.error("Load wishlist error:", error);
         return currentUser.wishlist || '';
     }
-
 }
