@@ -1,0 +1,168 @@
+// firebase.js - Firebase utilities for the Christmas Gift Exchange app
+
+// Firebase config - Replace with your real config from Firebase Console
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+let app = null;
+let db = null;
+let isFirebaseAvailable = false;
+
+try {
+    // Import Firebase modules (this assumes the HTML includes the Firebase scripts)
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js");
+    const { getFirestore } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js");
+    
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    isFirebaseAvailable = true;
+    console.log("Firebase initialized successfully.");
+} catch (error) {
+    console.error("Firebase initialization failed:", error);
+    alert("Firebase not set up. Using local storage only (no shared data).");
+}
+
+// Export functions for use in other files
+export { db, isFirebaseAvailable };
+
+// Function to register a new user
+export async function registerUser(name, email) {
+    const newUser = { name, email, wishlist: '' };
+    try {
+        if (isFirebaseAvailable) {
+            const { doc, setDoc, getDoc } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js");
+            const docRef = doc(db, 'users', email);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                throw new Error('Account already exists! Please login instead.');
+            }
+            await setDoc(docRef, newUser);
+            localStorage.setItem('currentUser', JSON.stringify(newUser));
+            return { success: true, message: 'Registered successfully!' };
+        } else {
+            let users = JSON.parse(localStorage.getItem('christmasUsers')) || [];
+            const existingUser = users.find(u => u.email === email);
+            if (existingUser) {
+                throw new Error('Account already exists! Please login instead.');
+            }
+            users.push(newUser);
+            localStorage.setItem('christmasUsers', JSON.stringify(users));
+            localStorage.setItem('currentUser', JSON.stringify(newUser));
+            return { success: true, message: 'Registered locally!' };
+        }
+    } catch (error) {
+        console.error("Registration error:", error);
+        return { success: false, message: error.message };
+    }
+}
+
+// Function to login an existing user
+export async function loginUser(email) {
+    try {
+        if (isFirebaseAvailable) {
+            const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js");
+            const docRef = doc(db, 'users', email);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists()) {
+                throw new Error('Account not found. Please register first.');
+            }
+            localStorage.setItem('currentUser', JSON.stringify(docSnap.data()));
+            return { success: true, message: 'Logged in successfully!' };
+        } else {
+            let users = JSON.parse(localStorage.getItem('christmasUsers')) || [];
+            const existingUser = users.find(u => u.email === email);
+            if (!existingUser) {
+                throw new Error('Account not found. Please register first.');
+            }
+            localStorage.setItem('currentUser', JSON.stringify(existingUser));
+            return { success: true, message: 'Logged in locally!' };
+        }
+    } catch (error) {
+        console.error("Login error:", error);
+        return { success: false, message: error.message };
+    }
+}
+
+// Function to save wishlist for current user
+export async function saveWishlist(wishlistText) {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) return { success: false, message: 'No user logged in.' };
+    
+    currentUser.wishlist = wishlistText;
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    
+    try {
+        if (isFirebaseAvailable) {
+            const { doc, setDoc } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js");
+            await setDoc(doc(db, 'users', currentUser.email), currentUser);
+            return { success: true, message: 'Wishlist saved and synced!' };
+        } else {
+            let users = JSON.parse(localStorage.getItem('christmasUsers')) || [];
+            const index = users.findIndex(u => u.email === currentUser.email);
+            if (index !== -1) {
+                users[index] = currentUser;
+                localStorage.setItem('christmasUsers', JSON.stringify(users));
+            }
+            return { success: true, message: 'Wishlist saved locally!' };
+        }
+    } catch (error) {
+        console.error("Save wishlist error:", error);
+        return { success: false, message: error.message };
+    }
+}
+
+// Function to load history (all users)
+export async function loadHistory(callback) {
+    if (isFirebaseAvailable) {
+        try {
+            const { collection, onSnapshot } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js");
+            onSnapshot(collection(db, 'users'), (snapshot) => {
+                const users = [];
+                snapshot.forEach((doc) => users.push(doc.data()));
+                callback(users);
+            });
+        } catch (error) {
+            console.error("Firebase load history error:", error);
+            loadLocalHistory(callback);
+        }
+    } else {
+        loadLocalHistory(callback);
+    }
+}
+
+function loadLocalHistory(callback) {
+    const users = JSON.parse(localStorage.getItem('christmasUsers')) || [];
+    callback(users);
+}
+
+// Function to load current user's wishlist on page load
+export async function loadUserWishlist() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    if (!currentUser) return;
+    
+    try {
+        if (isFirebaseAvailable) {
+            const { doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js");
+            const docRef = doc(db, 'users', currentUser.email);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                return data.wishlist || '';
+            } else {
+                await setDoc(docRef, currentUser);
+                return '';
+            }
+        } else {
+            return currentUser.wishlist || '';
+        }
+    } catch (error) {
+        console.error("Load wishlist error:", error);
+        return currentUser.wishlist || '';
+    }
+}
