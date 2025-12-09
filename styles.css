@@ -63,7 +63,7 @@ input, textarea {
 }
 
 textarea {
-    width: 100%;
+    width: 80%;
     height: 100px;
     resize: vertical;
 }
@@ -132,6 +132,7 @@ textarea {
         width: 100%;
     }
 }
+
 
 
 
