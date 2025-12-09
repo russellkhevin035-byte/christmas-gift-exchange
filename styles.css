@@ -60,7 +60,7 @@ input, textarea {
 .top-image {
     width: 25%;
     max-width: 15px;
-    height: 25px;
+    height: 30px;
     object-fit: cover;
     border-radius: 10px;
     margin-bottom: 20px;
@@ -140,5 +140,6 @@ textarea {
         width: 100%;
     }
 }
+
 
 
