@@ -2,12 +2,13 @@
 
 // Firebase config - Replace with your real config from Firebase Console
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCOxCavlsWWB662RO15X4iDcSZFrtH2uTI",
+  authDomain: "christmasgiftexchange-8d38e.firebaseapp.com",
+  projectId: "christmasgiftexchange-8d38e",
+  storageBucket: "christmasgiftexchange-8d38e.firebasestorage.app",
+  messagingSenderId: "184610390168",
+  appId: "1:184610390168:web:fc87da7d2c88db285790ed",
+  measurementId: "G-XYBRD248ES"
 };
 
 let app = null;
@@ -165,4 +166,5 @@ export async function loadUserWishlist() {
         console.error("Load wishlist error:", error);
         return currentUser.wishlist || '';
     }
+
 }
