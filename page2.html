@@ -81,6 +81,7 @@
                     const userCard = document.createElement('div');
                     userCard.className = 'user-card';
                     userCard.innerHTML = `
+                        <img src="catherine.jpg" alt="${user.name}" class="card-image">
                         <h4>${user.name}</h4>
                         <p><strong>Wishlist:</strong> ${user.wishlist || 'None yet'}</p>
                     `;
@@ -91,5 +92,3 @@
     </script>
 </body>
 </html>
-
-
