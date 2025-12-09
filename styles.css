@@ -12,7 +12,7 @@ body {
 
 .container {
     max-width: 800px;
-    width: 90%;
+    width: 100%;
     background: rgba(255, 255, 255, 0.9);
     color: #333;
     padding: 20px;
@@ -132,6 +132,7 @@ textarea {
         width: 100%;
     }
 }
+
 
 
 
